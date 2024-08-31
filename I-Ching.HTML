@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta Completa del I Ching</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+        }
+        .hexagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .line {
+            width: 100px;
+            height: 20px;
+            margin: 5px;
+            background-color: #333;
+        }
+        .yin {
+            display: flex;
+            justify-content: space-between;
+        }
+        .yin::before, .yin::after {
+            content: "";
+            width: 45%;
+            height: 20px;
+            background-color: #333;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #reading {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Consulta Completa del I Ching</h1>
+    <div class="hexagram" id="hexagram"></div>
+    <button onclick="consultIChing()">Realizar Consulta</button>
+    <p id="reading"></p>
+
+    <script>
+        const hexagrams = {
+            "111111": { name: "1. Ch'ien (El Cielo)", meaning: "Fuerza creativa, poder, persistencia" },
+            "000000": { name: "2. K'un (La Tierra)", meaning: "Receptividad, docilidad, soporte" },
+            "100010": { name: "3. Chun (La Dificultad Inicial)", meaning: "Crecimiento a través de los obstáculos" },
+            "010001": { name: "4. Meng (La Juventud)", meaning: "Inexperiencia, desarrollo, educación" },
+            "111010": { name: "5. Hsu (La Espera)", meaning: "Paciencia, timing, preparación" },
+            "010111": { name: "6. Sung (El Conflicto)", meaning: "Confrontación, resolución de diferencias" },
+            "010000": { name: "7. Shih (El Ejército)", meaning: "Disciplina, liderazgo, estrategia" },
+            "000010": { name: "8. Pi (La Unión)", meaning: "Unión, alianza, cooperación" },
+            "111011": { name: "9. Hsiao Ch'u (El Poder Domesticador de lo Pequeño)", meaning: "Contención, refinamiento, cultivo" },
+            "110111": { name: "10. Lu (La Conducta)", meaning: "Comportamiento correcto, ética, tradición" },
+            "111000": { name: "11. T'ai (La Paz)", meaning: "Armonía, prosperidad, flujo" },
+            "000111": { name: "12. P'i (El Estancamiento)", meaning: "Obstrucción, adversidad, decadencia" },
+            "101111": { name: "13. T'ung Jen (La Comunidad con los Hombres)", meaning: "Fraternidad, comunidad, intereses compartidos" },
+            "111101": { name: "14. Ta Yu (La Posesión de lo Grande)", meaning: "Abundancia, grandeza, éxito" },
+            "001000": { name: "15. Ch'ien (La Modestia)", meaning: "Humildad, modestia, respeto" },
+            "000100": { name: "16. Yu (El Entusiasmo)", meaning: "Entusiasmo, inspiración, motivación" },
+            "100110": { name: "17. Sui (El Seguimiento)", meaning: "Adaptación, seguir, fluir" },
+            "011001": { name: "18. Ku (El Trabajo sobre lo Corrupto)", meaning: "Reparación, corrección, renovación" },
+            "110000": { name: "19. Lin (La Aproximación)", meaning: "Acercamiento, influencia, supervisión" },
+            "000011": { name: "20. Kuan (La Contemplación)", meaning: "Observación, introspección, perspectiva" },
+            "100101": { name: "21. Shih Ho (Morder a Través)", meaning: "Decisión, juicio, castigo" },
+            "101001": { name: "22. Pi (La Gracia)", meaning: "Belleza, gracia, elegancia" },
+            "000001": { name: "23. Po (La Desintegración)", meaning: "Desintegración, caída, despojo" },
+            "100000": { name: "24. Fu (El Retorno)", meaning: "Retorno, renovación, recuperación" },
+            "100111": { name: "25. Wu Wang (La Inocencia)", meaning: "Inocencia, naturalidad, espontaneidad" },
+            "111001": { name: "26. Ta Ch'u (El Poder Domesticador de lo Grande)", meaning: "Acumulación de energía, contención del poder" },
+            "100001": { name: "27. I (Las Comisuras de la Boca)", meaning: "Nutrición, alimentación, cuidado" },
+            "011110": { name: "28. Ta Kuo (La Preponderancia de lo Grande)", meaning: "Exceso, grandeza, crítico" },
+            "010010": { name: "29. K'an (Lo Abismal)", meaning: "Peligro, profundidad, persistencia" },
+            "101101": { name: "30. Li (Lo Adherente)", meaning: "Fuego, claridad, dependencia" },
+            "001110": { name: "31. Hsien (La Influencia)", meaning: "Influencia, atracción, cortejo" },
+            "011100": { name: "32. Heng (La Duración)", meaning: "Duración, estabilidad, perseverancia" },
+            "001111": { name: "33. Tun (La Retirada)", meaning: "Retirada, distanciamiento, preservación" },
+            "111100": { name: "34. Ta Chuang (El Gran Poder)", meaning: "Gran fuerza, poder, vigor" },
+            "000101": { name: "35. Chin (El Progreso)", meaning: "Progreso, avance, iluminación" },
+            "101000": { name: "36. Ming I (El Oscurecimiento de la Luz)", meaning: "Adversidad, oscuridad, perseverancia" },
+            "101011": { name: "37. Chia Jen (La Familia)", meaning: "Familia, roles, estructura" },
+            "110101": { name: "38. K'uei (La Oposición)", meaning: "Oposición, contraste, complementariedad" },
+            "001010": { name: "39. Chien (El Obstáculo)", meaning: "Obstrucción, dificultad, superación" },
+            "010100": { name: "40. Hsieh (La Liberación)", meaning: "Liberación, alivio, resolución" },
+            "110001": { name: "41. Sun (La Disminución)", meaning: "Disminución, sacrificio, ganancia a través de la pérdida" },
+            "100011": { name: "42. I (El Aumento)", meaning: "Aumento, beneficio, expansión" },
+            "111110": { name: "43. Kuai (La Irrupción)", meaning: "Determinación, avance decisivo, resolución" },
+            "011111": { name: "44. Kou (El Acoplamiento)", meaning: "Encuentro, tentación, precaución" },
+            "000110": { name: "45. Ts'ui (La Reunión)", meaning: "Reunión, congregación, colectividad" },
+            "011000": { name: "46. Sheng (El Ascenso)", meaning: "Ascenso, promoción, crecimiento" },
+            "010110": { name: "47. K'un (La Opresión)", meaning: "Adversidad, agotamiento, perseverancia" },
+            "011010": { name: "48. Ching (El Pozo)", meaning: "Fuente, renovación, centro" },
+            "101110": { name: "49. Ko (La Revolución)", meaning: "Cambio, transformación, renovación" },
+            "011101": { name: "50. Ting (El Caldero)", meaning: "Transformación, evolución, refinamiento" },
+            "100100": { name: "51. Chen (La Excitación)", meaning: "Shock, estímulo, nuevo comienzo" },
+            "001001": { name: "52. Ken (El Aquietamiento)", meaning: "Quietud, meditación, inmovilidad" },
+            "001011": { name: "53. Chien (El Desarrollo)", meaning: "Desarrollo gradual, progreso, paciencia" },
+            "110100": { name: "54. Kuei Mei (La Doncella Casadera)", meaning: "Unión, relaciones, compromiso" },
+            "101100": { name: "55. Feng (La Abundancia)", meaning: "Abundancia, plenitud, culminación" },
+            "001101": { name: "56. Lu (El Viajero)", meaning: "Viaje, transitoriedad, adaptabilidad" },
+            "011011": { name: "57. Sun (Lo Suave)", meaning: "Penetración sutil, influencia gentil" },
+            "110110": { name: "58. Tui (Lo Sereno)", meaning: "Alegría, placer, satisfacción" },
+            "010011": { name: "59. Huan (La Dispersión)", meaning: "Disolución, dispersión, nuevo orden" },
+            "110010": { name: "60. Chieh (La Limitación)", meaning: "Limitación, restricción, definición" },
+            "110011": { name: "61. Chung Fu (La Verdad Interior)", meaning: "Verdad interna, sinceridad, confianza" },
+            "001100": { name: "62. Hsiao Kuo (La Preponderancia de lo Pequeño)", meaning: "Atención al detalle, humildad, adaptabilidad" },
+            "101010": { name: "63. Chi Chi (Después de la Terminación)", meaning: "Realización, finalización, transición" },
+            "010101": { name: "64. Wei Chi (Antes de la Terminación)", meaning: "Incompleto, transición, potencial" }
+        };
+
+        function getRandomLine() {
+            return Math.random() < 0.5 ? "1" : "0";
+        }
+
+        function generateHexagram() {
+            let hexagram = "";
+            for (let i = 0; i < 6; i++) {
+                hexagram += getRandomLine();
+            }
+            return hexagram;
+        }
+
+        function drawHexagram(hexagram) {
+            const hexagramDiv = document.getElementById('hexagram');
+            hexagramDiv.innerHTML = '';
+            for (let i = 5; i >= 0; i--) {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = hexagram[i] === "1" ? "line" : "line yin";
+                hexagramDiv.appendChild(lineDiv);
+            }
+        }
+
+        function consultIChing() {
+            const hexagram = generateHexagram();
+            drawHexagram(hexagram);
+            
+            const { name, meaning } = hexagrams[hexagram];
+            const reading = `Has obtenido el hexagrama: ${name}. Significado: ${meaning}`;
+
+            document.getElementById('reading').textContent = reading;
+        }
+    </script>
+</body>
+</html>
